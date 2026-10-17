@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Industrial Water Tube Boiler — Spatial Core · Amin Mosallanejad</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+<style>
+  :root{
+    --ink:#eef5ff;
+    --bg-deep:#03050f;
+
+    /* Brand gradient — navy → brick red */
+    --brand-1:#7fa4ff;
+    --brand-2:#b06ce8;
+    --brand-3:#e0556b;
+    --brand-4:#b23a1a;
+
+    --accent-1:#4f6cff;
+    --panel-w: min(600px, 94vw);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html, body{
+    width:100%; height:100%;
+    overflow:hidden;
+    background:var(--bg-deep);
+    font-family:'Inter', system-ui, -apple-system, sans-serif;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    user-select:none;
+  }
+
+  /* ================= STAGE ================= */
+  #container{
+    position:fixed; inset:0;
+    width:100%; height:100%;
+    z-index:1;
+  }
+  #container > canvas{ display:block; position:absolute; inset:0; }
+
+  body::after{
+    content:'';
+    position:fixed; inset:0;
+    pointer-events:none;
+    background:radial-gradient(circle at 50% 55%, transparent 35%, rgba(2,4,10,.88) 100%);
+    z-index:2;
+  }
+
+  /* ================= UI LAYER ================= */
+  .ui-layer{
+    position:fixed; inset:0;
+    z-index:10;
+    pointer-events:none;
+  }
+
+  /* ================= TOP BAR ================= */
+  .topbar{
+    position:absolute;
+    top:0; left:0; right:0;
+    height:104px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(180deg, rgba(3,5,15,.92) 0%, transparent 100%);
+    animation:riseIn .9s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .title-block{ text-align:center; }
+  .title-block .tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:.45em;
+    text-transform:uppercase;
+    color:#7a9bff;
+    margin-bottom:8px;
+    text-shadow:0 0 12px rgba(122,155,255,.55);
+  }
+  .title-block h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:clamp(18px, 2vw, 32px);
+    font-weight:700;
+    letter-spacing:-.02em;
+    line-height:1.1;
+    background:linear-gradient(90deg, var(--brand-1) 0%, var(--brand-2) 38%, var(--brand-3) 70%, var(--brand-4) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 0 26px rgba(200,120,255,.28));
+  }
+
+  /* ================= HUD (top right) ================= */
+  .hud{
+    position:absolute;
+    top:26px; right:28px;
+    animation:riseIn .9s .1s cubic-bezier(.2,.8,.2,1) both;
+    z-index:11;
+  }
+  .hud-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 16px 8px 14px;
+    background:rgba(10,20,46,.6);
+    border:1px solid rgba(120,150,255,.28);
+    border-radius:100px;
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:#a8b8f0;
+  }
+  .hud-dot{
+    width:6px; height:6px;
+    border-radius:50%;
+    background:var(--accent-1);
+    box-shadow:0 0 10px var(--accent-1);
+    animation:dotPulse 2s ease-in-out infinite;
+  }
+  @keyframes dotPulse{
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%    { opacity:.4; transform:scale(.7); }
+  }
+
+  /* ================= LEFT RAIL ================= */
+  .left-rail{
+    position:absolute;
+    top:104px; left:26px; bottom:24px;
+    width:286px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    z-index:12;
+    pointer-events:none;
+    animation:riseIn 1s .15s cubic-bezier(.2,.8,.2,1) both;
+  }
+
+  /* ---------- PROFILE CARD ---------- */
+  .profile{
+    pointer-events:auto;
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 16px 14px 14px;
+    background:linear-gradient(135deg, rgba(12,20,44,.82), rgba(6,9,22,.58));
+    border:1px solid rgba(120,150,255,.18);
+    border-radius:18px;
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    box-shadow:
+      0 18px 50px -22px rgba(80,120,255,.55),
+      inset 0 1px 0 rgba(255,255,255,.06);
+    overflow:hidden;
+  }
+  .profile::before{
+    content:'';
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:2px;
+    background:linear-gradient(90deg, var(--brand-1), var(--brand-2) 45%, var(--brand-4));
+    opacity:.9;
+  }
+  .profile::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at 0% 0%, rgba(120,150,255,.14), transparent 60%);
+    pointer-events:none;
+  }
+
+  .avatar{
+    position:relative;
+    width:60px; height:60px;
+    flex:0 0 auto;
+    filter:drop-shadow(0 0 16px rgba(120,140,255,.35));
+  }
+  .avatar-ring{
+    position:absolute; inset:0;
+    border-radius:50%;
+    background:conic-gradient(from 0deg, var(--brand-1), var(--brand-2), var(--brand-3), var(--brand-4), var(--brand-1));
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+            mask:radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+    animation:spinRing 10s linear infinite;
+    opacity:.95;
+  }
+  .avatar-inner{
+    position:absolute; inset:5px;
+    border-radius:50%;
+    background:#03060f;
+    overflow:hidden;
+    display:grid;
+    place-items:center;
+    border:1px solid rgba(120,150,255,.22);
+  }
+  .avatar-inner img{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .avatar-inner img.missing{ display:none; }
+  .avatar-fallback{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:17px;
+    font-weight:700;
+    letter-spacing:.02em;
+    background:linear-gradient(135deg, var(--brand-1), var(--brand-3));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    -webkit-text-fill-color:transparent;
+  }
+
+  .profile-text{ min-width:0; }
+  .profile-name{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:16.5px;
+    font-weight:700;
+    letter-spacing:-.01em;
+    line-height:1.15;
+    white-space:nowrap;
+    background:linear-gradient(100deg,
+      var(--brand-1) 0%,
+      var(--brand-2) 30%,
+      var(--brand-3) 62%,
+      var(--brand-4) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 0 14px rgba(160,120,255,.22));
+  }
+  .profile-roles{
+    margin-top:7px;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  .profile-roles span{
+    position:relative;
+    padding-left:11px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:8.5px;
+    font-weight:500;
+    letter-spacing:.055em;
+    color:#93a7d8;
+    white-space:nowrap;
+    text-transform:uppercase;
+  }
+  .profile-roles span::before{
+    content:'';
+    position:absolute;
+    left:0; top:50%;
+    transform:translateY(-50%);
+    width:5px; height:1.5px;
+    background:linear-gradient(90deg, var(--brand-1), var(--brand-4));
+    box-shadow:0 0 6px rgba(120,140,255,.8);
+  }
+
+  /* ---------- GROUP NAV ---------- */
+  .nav-caption{
+    font-family:'JetBrains Mono', monospace;
+    font-size:9px;
+    font-weight:600;
+    letter-spacing:.32em;
+    text-transform:uppercase;
+    color:rgba(140,160,210,.45);
+    padding-left:10px;
+    margin-top:-2px;
+  }
+  .group-nav{
+    pointer-events:auto;
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    padding:2px 8px 6px 2px;
+    scrollbar-width:thin;
+    -webkit-mask-image:linear-gradient(180deg, #000 90%, transparent 100%);
+            mask-image:linear-gradient(180deg, #000 90%, transparent 100%);
+  }
+  .group-nav::-webkit-scrollbar{ width:3px; }
+  .group-nav::-webkit-scrollbar-thumb{ background:rgba(120,150,255,.3); border-radius:3px; }
+
+  .group-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    width:100%;
+    padding:6px 12px 6px 9px;
+    border-radius:9px;
+    background:rgba(8,14,32,.4);
+    border:1px solid transparent;
+    color:#8fa8d4;
+    font-family:'JetBrains Mono', monospace;
+    font-size:9.5px;
+    font-weight:500;
+    letter-spacing:.03em;
+    cursor:pointer;
+    transition:all .25s;
+    text-align:left;
+  }
+  .group-item:hover{
+    background:rgba(30,50,100,.42);
+    border-color:rgba(120,150,255,.25);
+    color:#d8e4ff;
+    transform:translateX(2px);
+  }
+  .group-item.active{
+    background:rgba(30,50,100,.62);
+    border-color:var(--accent);
+    color:#fff;
+    box-shadow:0 0 18px -4px var(--accent), inset 0 0 8px -2px var(--accent);
+  }
+  .group-item.active .g-dot{
+    box-shadow:0 0 10px 2px var(--accent);
+    transform:scale(1.35);
+  }
+  .group-item .g-dot{
+    width:8px; height:8px;
+    border-radius:50%;
+    flex:0 0 auto;
+    transition:all .25s;
+    box-shadow:0 0 4px var(--accent);
+  }
+  .group-item .g-num{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:8px;
+    letter-spacing:.05em;
+    opacity:.6;
+  }
+  .group-item .g-name{
+    font-family:'Inter', sans-serif;
+    font-size:10px;
+    font-weight:500;
+    letter-spacing:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    flex:1;
+  }
+
+  /* ================= HINT ================= */
+  .hint{
+    position:absolute;
+    bottom:22px; left:50%;
+    transform:translateX(-50%);
+    font-family:'JetBrains Mono', monospace;
+    font-size:9.5px;
+    font-weight:600;
+    letter-spacing:.32em;
+    text-transform:uppercase;
+    color:rgba(140,160,210,.45);
+    animation:riseIn 1s .4s cubic-bezier(.2,.8,.2,1) both;
+    transition:opacity .4s, transform .4s;
+    z-index:11;
+  }
+  body.panel-open .hint{
+    opacity:0;
+    transform:translateX(-50%) translateY(8px);
+  }
+
+  @keyframes riseIn{
+    from{ opacity:0; transform:translateY(15px); }
+    to  { opacity:1; transform:translateY(0); }
+  }
+  @keyframes spinRing{
+    to{ transform:rotate(360deg); }
+  }
+
+  /* ================= CSS2D LABELS ================= */
+  .part-label{
+    width:max-content;
+    pointer-events:auto;
+    cursor:pointer;
+    transition:opacity .3s;
+    --accent:#4f6cff;
+  }
+  .label-inner{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 14px 6px 8px;
+    background:rgba(6,12,26,.85);
+    border:1px solid rgba(120,150,255,.3);
+    border-radius:100px;
+    font-size:11px;
+    font-weight:600;
+    color:#c8d8fa;
+    white-space:nowrap;
+    box-shadow:0 4px 20px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    transition:transform .4s cubic-bezier(.34,1.56,.64,1), background .3s, border-color .3s, box-shadow .3s, color .3s;
+    transform:translate(-50%, -50%);
+  }
+  .label-inner .num{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:9px;
+    letter-spacing:.05em;
+    color:var(--accent);
+    padding:2px 5px;
+    border-radius:4px;
+    background:color-mix(in srgb, var(--accent) 15%, transparent);
+    border:1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    filter:brightness(1.4);
+  }
+  .part-label.active .label-inner{
+    background:color-mix(in srgb, var(--accent) 30%, rgba(6,12,26,.9));
+    border-color:var(--accent);
+    color:#ffffff;
+    box-shadow:0 0 32px var(--accent), 0 4px 20px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.2);
+    transform:translate(-50%, -50%) scale(1.1);
+  }
+  .part-label.active .label-inner .num{
+    color:#fff;
+    background:rgba(255,255,255,.25);
+    border-color:rgba(255,255,255,.6);
+    filter:brightness(2);
+  }
+
+  /* ================= DETAIL PANEL ================= */
+  .detail-panel{
+    position:fixed;
+    top:0; right:0;
+    width:var(--panel-w);
+    height:100vh;
+    background:linear-gradient(180deg, rgba(6,12,28,.97), rgba(3,5,15,.99));
+    border-left:1px solid rgba(120,150,255,.2);
+    backdrop-filter:blur(24px);
+    -webkit-backdrop-filter:blur(24px);
+    transform:translateX(100%);
+    transition:transform .55s cubic-bezier(.2,.8,.2,1);
+    z-index:100;
+    display:flex;
+    flex-direction:column;
+    pointer-events:auto;
+    --accent:#4f6cff;
+  }
+  .detail-panel.open{ transform:translateX(0); }
+  .detail-panel::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:
+      radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 55%),
+      radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 55%);
+    pointer-events:none;
+    transition:background .5s;
+  }
+  .detail-panel::after{
+    content:'';
+    position:absolute;
+    top:0; left:0; right:0;
+    height:2px;
+    background:linear-gradient(90deg, var(--accent), transparent 85%);
+    opacity:.9;
+    pointer-events:none;
+  }
+
+  .panel-nav{
+    position:absolute;
+    top:22px; right:66px;
+    display:flex;
+    gap:6px;
+    z-index:2;
+  }
+  .panel-nav button, .panel-close{
+    width:34px; height:34px;
+    border-radius:9px;
+    background:rgba(10,20,44,.7);
+    border:1px solid rgba(120,150,255,.28);
+    color:#b0c4ee;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:all .2s;
+    font-family:'Space Grotesk', sans-serif;
+  }
+  .panel-nav button:hover{
+    background:color-mix(in srgb, var(--accent) 25%, rgba(10,20,44,.7));
+    border-color:var(--accent);
+    color:#fff;
+  }
+  .panel-close{
+    position:absolute;
+    top:22px; right:22px;
+    font-size:18px;
+    z-index:2;
+  }
+  .panel-close:hover{
+    background:rgba(160,40,60,.5);
+    border-color:rgba(255,150,170,.7);
+    color:#fff;
+  }
+
+  .panel-header{
+    padding:62px 34px 22px;
+    border-bottom:1px solid rgba(120,150,255,.14);
+    position:relative;
+    z-index:1;
+  }
+  .panel-badge{
+    display:inline-block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.22em;
+    color:var(--accent);
+    padding:5px 12px;
+    border-radius:6px;
+    background:color-mix(in srgb, var(--accent) 12%, transparent);
+    border:1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    margin-bottom:14px;
+    filter:brightness(1.25);
+  }
+  .panel-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:24px;
+    font-weight:700;
+    letter-spacing:-.015em;
+    line-height:1.2;
+    color:#ffffff;
+    margin-bottom:6px;
+  }
+  .panel-subtitle{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:rgba(150,170,215,.75);
+  }
+
+  .panel-body{
+    flex:1;
+    overflow-y:auto;
+    padding:10px 34px 44px;
+    position:relative;
+    z-index:1;
+  }
+  .panel-body::-webkit-scrollbar{ width:5px; }
+  .panel-body::-webkit-scrollbar-track{ background:transparent; }
+  .panel-body::-webkit-scrollbar-thumb{
+    background:color-mix(in srgb, var(--accent) 40%, transparent);
+    border-radius:3px;
+  }
+
+  .section-header{
+    margin:26px 0 10px;
+    padding:6px 0 6px 12px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--accent);
+    border-left:2px solid var(--accent);
+    filter:brightness(1.3);
+  }
+  .section-header:first-child{ margin-top:8px; }
+
+  .eq-item{
+    padding:13px 0;
+    border-bottom:1px solid rgba(120,150,255,.07);
+  }
+  .eq-item:last-child{ border-bottom:none; }
+
+  .eq-name{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    font-weight:500;
+    letter-spacing:.04em;
+    color:#829ccb;
+    margin-bottom:9px;
+  }
+  .eq-formula{
+    font-size:14.5px;
+    color:#eaf5ff;
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding:2px 0 6px;
+  }
+  .eq-formula::-webkit-scrollbar{ height:3px; }
+  .eq-formula::-webkit-scrollbar-thumb{
+    background:color-mix(in srgb, var(--accent) 30%, transparent);
+    border-radius:2px;
+  }
+  .eq-formula .katex{ font-size:1.02em !important; color:#eaf5ff; }
+  .eq-formula .katex-display{ margin:0 !important; }
+
+  /* list mode (group 12) */
+  .report-list{
+    list-style:none;
+    padding:0;
+    margin-top:10px;
+  }
+  .report-list li{
+    padding:11px 0 11px 22px;
+    position:relative;
+    font-size:13px;
+    color:#cbdaf5;
+    border-bottom:1px solid rgba(120,150,255,.06);
+  }
+  .report-list li::before{
+    content:'';
+    position:absolute;
+    left:0; top:50%;
+    width:10px; height:1px;
+    background:var(--accent);
+    box-shadow:0 0 6px var(--accent);
+    filter:brightness(1.4);
+  }
+
+  /* ================= RESPONSIVE ================= */
+  @media (max-width:1280px){
+    .left-rail{ width:262px; }
+    .profile-name{ font-size:15.5px; }
+  }
+  @media (max-width:1080px){
+    .left-rail{ width:246px; }
+    .profile-name{ font-size:14.5px; }
+    .profile-roles span{ font-size:8px; }
+  }
+  @media (max-width:980px){
+    .group-nav, .nav-caption{ display:none; }
+    .left-rail{ width:auto; max-width:calc(100vw - 44px); bottom:auto; }
+  }
+  @media (max-width:760px){
+    .topbar{ height:82px; }
+    .title-block h1{ font-size:16px; }
+    .title-block .tag{ font-size:8px; letter-spacing:.35em; }
+    .left-rail{ top:88px; left:16px; }
+    .hud{ top:16px; right:16px; }
+    .hud-badge{ font-size:8.5px; padding:6px 12px; }
+  }
+  @media (max-width:640px){
+    .hint{ display:none; }
+    .label-inner{ font-size:9px; padding:4px 8px; }
+    .label-inner .num{ display:none; }
+    .detail-panel{ width:100%; }
+    .panel-header{ padding:70px 20px 20px; }
+    .panel-body{ padding:10px 20px 32px; }
+    .eq-formula{ font-size:12.5px; }
+    .profile{ padding:10px 12px; }
+    .avatar{ width:48px; height:48px; }
+    .profile-name{ font-size:13.5px; }
+    .profile-roles span{ font-size:7.2px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="container"></div>
+
+<div class="ui-layer">
+
+  <!-- PROFILE (LEFT) -->
+  <div class="left-rail">
+    <div class="profile">
+      <div class="avatar">
+        <span class="avatar-ring"></span>
+        <div class="avatar-inner">
+          <span class="avatar-fallback">AM</span>
+          <img src="LOGO.jpg" alt="Amin Mosallanejad" onerror="this.classList.add('missing')">
+        </div>
+      </div>
+      <div class="profile-text">
+        <div class="profile-name">Amin Mosallanejad</div>
+        <div class="profile-roles">
+          <span>Water / Wastewater Treatment</span>
+          <span>Senior Utility Engineer</span>
+          <span>Data Scientist (M.Sc.)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-caption">Design Groups · 12</div>
+    <nav class="group-nav" id="group-nav"></nav>
+  </div>
+
+  <!-- TITLE (TOP CENTER) -->
+  <header class="topbar">
+    <div class="title-block">
+      <div class="tag">Spatial Core · Portfolio Edition</div>
+      <h1>Industrial Water Tube Boiler Design</h1>
+    </div>
+  </header>
+
+  <!-- HUD (TOP RIGHT) -->
+  <div class="hud">
+    <div class="hud-badge">
+      <span class="hud-dot"></span>
+      <span>12 Groups · 74 Chapters · ~140 Eq.</span>
+    </div>
+  </div>
+
+  <div class="hint">Drag to orbit · Scroll to zoom · Click any node or sidebar item</div>
+</div>
+
+<aside class="detail-panel" id="panel">
+  <div class="panel-nav">
+    <button id="prev-group" title="Previous group (←)">‹</button>
+    <button id="next-group" title="Next group (→)">›</button>
+  </div>
+  <button class="panel-close" id="panel-close" title="Close (Esc)">×</button>
+  <div class="panel-header">
+    <div class="panel-badge" id="panel-badge">01</div>
+    <h2 class="panel-title" id="panel-title">Heat Duty &amp; Fuel</h2>
+    <div class="panel-subtitle" id="panel-subtitle">Chapters 1–4</div>
+  </div>
+  <div class="panel-body" id="panel-body"></div>
+</aside>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls }    from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer }   from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass }       from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass }  from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass }       from 'three/addons/postprocessing/OutputPass.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+/* ================================================================
+   DATA — 12 groups with the complete equation set
+================================================================ */
+const GROUPS = [
+  { n:1, t:"Heat Duty & Fuel", tc:"Chapters 1–4", short:"Heat & Fuel", sections:[
+    { h:"Boiler heat duty", eqs:[
+      ["Per kg steam", "Q_{\\text{to steam}} = h_{\\text{outlet steam}} - h_{\\text{inlet water}}"],
+      ["Total heat duty", "Q_{\\text{duty}} = Q_{\\text{to steam}}\\cdot\\dot m_{\\text{boiler @ 100\\% MCR}}"],
+    ]},
+    { h:"Required fuel", eqs:[
+      ["Fuel mass flow", "\\dot m_{\\text{fuel}} = \\dfrac{Q_{\\text{duty}}\\times 1.05}{LHV}"],
+    ]},
+  ]},
+
+  { n:2, t:"Combustion Air & FD Fan", tc:"Chapters 5–7", short:"Air & FD Fan", sections:[
+    { h:"Air & atmosphere", eqs:[
+      ["Barometric pressure", "P=\\dfrac{101325\\,(1-2.25577\\!\\times\\!10^{-5}H)^{5.25588}}{6894.76}"],
+      ["Saturation vapor pressure", "P_{ws}=\\dfrac{\\exp\\!\\bigl(77.3450+0.0057T-7.235/T\\bigr)}{T^{8.2}\\!\\times\\! 6894.76}"],
+      ["Moisture in air", "M=0.622\\,\\dfrac{RH\\%\\cdot SVP}{P_{\\text{baro}}-RH\\%\\cdot SVP}"],
+      ["Air density", "\\rho_g=492\\,\\dfrac{MW\\cdot P}{359\\,(460+T)\\,14.7}"],
+    ]},
+    { h:"Combustion air", eqs:[
+      ["Excess air", "\\text{Excess air\\%}=1.1\\,\\dfrac{O_2}{20.8-O_2}"],
+      ["Total combustion air", "\\dot W_{\\text{total air}}=(\\text{total air req.})\\,\\dot m_{\\text{fuel}}\\,(1+EA)"],
+    ]},
+    { h:"FD fan & duct", eqs:[
+      ["Actual vs standard air flow", "\\dfrac{V_a}{V_s}=\\dfrac{P_s}{P_a}\\,\\dfrac{T_a}{T_s}"],
+      ["FD discharge mass flow", "W_a'=60\\,\\rho_{\\text{air}}\\,V_a"],
+      ["Rect. duct equivalent diameter", "d_i=1.3\\,\\dfrac{(ab)^{0.625}}{(a+b)^{0.25}}"],
+      ["Duct Reynolds number", "Re=15.2\\,\\dfrac{W'}{\\mu\\,d_i}"],
+      ["Duct friction factor", "f=\\dfrac{0.316}{Re^{0.25}}"],
+      ["Duct pressure loss", "\\Delta P_{\\text{air}}=9.3\\!\\times\\!10^{-6}\\,f\\,W^2\\,\\dfrac{L_e}{\\rho\\,d_i^5}"],
+    ]},
+  ]},
+
+  { n:3, t:"Furnace Geometry & Radiation", tc:"Chapters 8–12", short:"Furnace", sections:[
+    { h:"Burner & dimensions", eqs:[
+      ["Burner heat input", "Q'_{\\text{burner}}=LHV\\cdot\\dot m_{\\text{fuel}}\\cdot 110\\%"],
+      ["Furnace length (min.)", "L_{\\text{min}}=L_{\\text{flame}}\\cdot 12+60"],
+      ["Furnace width (min.)", "W_{\\text{min}}=D_{\\text{flame}}\\cdot 12+20"],
+      ["Distance between burners", "d_{bb}=D_{\\text{flame}}\\cdot 12-10"],
+    ]},
+    { h:"Flue gas properties", eqs:[
+      ["Mass flow", "W'_{fg}=(\\text{lb }fg/\\text{lb fuel})\\,\\dot m_{\\text{fuel}}\\,(1+EA)"],
+      ["Molecular weight", "MW_{fg}=\\sum_i MW_i\\,w_i"],
+      ["Flame temperature", "t_c=\\dfrac{LHV+A\\alpha\\,HHV\\,C_{pa}\\!\\left(\\tfrac{t_a-80}{10^6}\\right)}{\\bigl(1-\\tfrac{\\%\\text{ash}}{100}+A\\alpha\\,HHV/10^6\\bigr)C_{pg}}"],
+      ["Adiabatic & gas temp.", "t_{ca}=0.95\\,t_c,\\qquad t_g=t_c+(300\\text{–}400)\\,{}^\\circ\\!F"],
+      ["Furnace pressure", "P_F=P_{\\text{fan}}-\\Delta P_{\\text{duct}}-\\Delta P_{\\text{burner}}"],
+      ["Gas density", "\\rho_g=492\\,\\dfrac{MW\\cdot P_F}{359\\,(460+T)\\,14.7}"],
+      ["Volumetric flow", "V'_{fg}=\\dot m_{fg}/\\rho_{fg}"],
+    ]},
+    { h:"Furnace area & volume", eqs:[
+      ["Min. area by velocity", "A_{\\min}=\\dfrac{V'_{fg}}{V_{sel}\\cdot 60}\\cdot 1.1"],
+      ["Min. height", "H_{\\min}=A_{\\min}/W"],
+      ["Height from burners", "H_F=D_{\\text{flame}}\\,N_b-20+13"],
+      ["Volume", "V=L\\,W\\,H"],
+      ["Volumetric heat release", "q_V=Q_{\\text{input}}/V_F"],
+      ["Heat surface", "A_F=\\dfrac{2WH+2WL_{bl}+2HL_{bl}+(L-L_{bl})H}{144}"],
+      ["Surface heat release", "q_A=Q_{\\text{input}}/A_F"],
+    ]},
+    { h:"Radiation & emissivity", eqs:[
+      ["Beam length", "L_b=\\dfrac{3.4\\,LWH}{2(LW+LH+WH)}=\\dfrac{1.7}{1/L+1/W+1/H}"],
+      ["CO$_2$ / H$_2$O partial pressure", "P_{vCO_2}=\\dfrac{w_{CO_2}}{w_{fg}},\\quad P_{vH_2O}=\\dfrac{w_{H_2O}+M_{air}}{w_{fg}}"],
+      ["Carbon-dioxide / water method", "\\epsilon_g=\\epsilon_c+\\eta\\,\\epsilon_w-\\Delta\\epsilon"],
+      ["Hottel coefficient", "K=\\dfrac{(0.8+1.6P_{vH_2O})(1-0.38T_g/1000)}{\\sqrt{(P_{vH_2O}+P_{vCO_2})L_b}}\\,(P_{vH_2O}+P_{vCO_2})"],
+      ["Hottel emissivity", "\\epsilon_g=0.9\\,(1-e^{-KL_b})"],
+      ["Furnace-exit energy balance", "A_P\\epsilon_g\\sigma(T_{\\text{exit}}^4-T_o^4)=W_f LHV-W_g h_{avg}"],
+      ["Non-luminous coefficient", "h_N=\\dfrac{\\sigma\\epsilon_g(T_g^4-T_o^4)}{T_g-T_o}"],
+    ]},
+  ]},
+
+  { n:4, t:"Convection & Metal Temp.", tc:"Chapters 13–16", short:"Convection", sections:[
+    { h:"Convection coefficients", eqs:[
+      ["Mass velocity", "G=\\dfrac{12\\,W'}{N_{\\text{deep}}\\,L_t\\,(S_T-d)}"],
+      ["Reynolds", "Re=\\dfrac{G\\,d_t}{12\\mu}"],
+      ["Prandtl", "Pr=\\dfrac{\\mu C_p}{K}"],
+      ["Nusselt", "Nu=0.33\\,Re^{0.6}Pr^{0.33}"],
+      ["Convection coefficient", "h_c=\\dfrac{12\\,K\\,Nu}{d_t}"],
+      ["Outside coefficient", "h_o=h_c+h_N"],
+    ]},
+    { h:"Tube-metal temperature", eqs:[
+      ["Drum water flow", "\\dot m_{dw}=\\dot m_s(1+\\%_{\\text{blowdown}})"],
+      ["Total tube number", "N_{bt}=N_{bk}+N_F+2N_{\\text{deep}}"],
+      ["Drum circulation", "\\dot m_{cir}=\\dot m_{dw}\\cdot CR"],
+      ["Each-tube circulation", "\\dot m_{\\text{tube}}=\\dot m_{cir}/N_{bt}"],
+      ["Inside-tube coefficient", "h_i=\\dfrac{2.44\\,\\dot m_{\\text{tube}}^{0.8}\\,C}{(d_t-t_t)^{1.8}}"],
+      ["Metal resistance", "R_m=\\dfrac{d_t}{24K_m}\\,\\ln\\!\\dfrac{d_t}{d_t-t_t}"],
+      ["Heat flux", "Q_f=\\dfrac{T_g-T_{\\text{sat}}}{R_i+R_m+R_o}"],
+      ["Temperature drops", "\\Delta T_i=Q_f R_i,\\;\\Delta T_m=Q_f R_m,\\;\\Delta T_o=Q_f R_o"],
+      ["Average tube-metal temp.", "T_{tm}=\\tfrac12\\!\\bigl[(T_g-\\Delta T_i)+(T_{\\text{sat}}+\\Delta T_o)\\bigr]"],
+    ]},
+    { h:"Furnace draft", eqs:[
+      ["Furnace gas density", "\\rho_g=492\\,MW\\,\\dfrac{P_F}{359(460+T_{avg})14.7}"],
+      ["Furnace velocity", "V_F=\\dfrac{V'_{fg}/60}{(H\\cdot W)/144}"],
+      ["Head loss (dimension change)", "H_{L}=(f_{ret}+f_{con})\\dfrac{(V_F/60)^2}{2g}"],
+      ["Equivalent diameter", "d_1=\\dfrac{2WH}{W+H}"],
+      ["Equivalent length", "L_e=L_F+H_L"],
+      ["Reynolds", "Re=15.2\\,\\dfrac{W'}{\\mu\\,d_1}"],
+      ["Friction factor", "fr=\\dfrac{0.316}{Re^{0.25}}"],
+      ["Draft pressure drop", "\\Delta P_F=93\\!\\times\\!10^{-6}\\,fr\\,W^2\\,\\dfrac{L_e}{\\rho\\,d_1^5}"],
+    ]},
+  ]},
+
+  { n:5, t:"Design Pressure & Superheater", tc:"Chapters 17–23", short:"Design P & SH", sections:[
+    { h:"Design pressure", eqs:[
+      ["PSV-1 setting", "P_{PSV_1}=P_{drum}\\cdot 1.05\\cdot 1.03"],
+      ["PSV-2 setting", "P_{PSV_2}=P_{PSV_1}+0.34"],
+      ["Design pressure", "P_{design}=P_{PSV_2}"],
+    ]},
+    { h:"Superheater geometry", eqs:[
+      ["Heat duty", "Q_{SH}=(h_{out}-h_{in})\\,\\dot m_s"],
+      ["Tube thickness (ASME PG-27)", "t_{\\min}=\\dfrac{PD}{2S+P}+0.005D+e"],
+      ["Tube area", "A_{SH,tube}=\\dfrac{\\pi}{144}\\!\\left(\\dfrac{D-t}{2}\\right)^2"],
+      ["Tube row number", "N_{row}=\\mathrm{roundup}\\!\\left(\\dfrac{V_{SH}}{V_{sel}\\cdot 60\\cdot N_{deep}}\\right)"],
+      ["Package length", "L_{SH}=\\mathrm{Round}[S_L(N_{row}-c_1)]"],
+      ["Heat surface", "A_{SH}=\\pi\\dfrac{D_t}{12}\\,N_{row}\\,N_{deep}\\,L_t"],
+    ]},
+    { h:"Superheater heat transfer", eqs:[
+      ["Gas outlet temperature", "T_{g,o}=T_{g,i}-\\dfrac{Q_{SH}}{\\dot m_{fg}C_{p}(1-\\text{heat loss}/100)}"],
+      ["LMTD", "\\Delta T_{lm}=\\dfrac{(T_{h,i}-T_{c,o})-(T_{h,o}-T_{c,i})}{\\ln\\!\\frac{T_{h,i}-T_{c,o}}{T_{h,o}-T_{c,i}}}"],
+      ["Average gas temperature", "T_{avg}=\\tfrac12(T_{g,i}+T_{g,o})"],
+      ["Gas mass velocity", "G=\\dfrac{12\\,W'}{N_{deep}\\,L_t(S_T-d)}"],
+      ["Convective coefficient", "h_C=0.9\\,\\dfrac{G^{0.6}}{D_t^{0.4}}\\,\\dfrac{K^{0.67}C_p^{0.33}}{\\mu^{0.27}}"],
+    ]},
+    { h:"Superheater performance", eqs:[
+      ["NTU effectiveness", "\\epsilon=\\dfrac{1-e^{-NTU(1-C)}}{1-C\\,e^{-NTU(1-C)}}"],
+      ["NTU", "NTU=\\dfrac{UA}{C_{\\min}},\\;\\; C=\\dfrac{C_{\\min}}{C_{\\max}}"],
+      ["Outlet steam temperature", "T_{s,o}=T_{s,i}+\\dfrac{Q_{SH}}{C_p\\dot m_s}"],
+      ["Each-tube steam flow", "\\dot m_{tube}=\\dfrac{\\dot m_s}{N_{row}\\,N_{deep}}"],
+    ]},
+    { h:"Superheater draft", eqs:[
+      ["Friction factor (inline)", "fr=Re^{-0.15}\\!\\left[0.044+\\dfrac{0.08S_L/d}{(S_T/d-1)^{0.43+1.13d/S_L}}\\right]"],
+      ["Draft pressure drop", "\\Delta P_g=9.3\\!\\times\\!10^{-10}\\,G^2 fr\\,\\dfrac{N_{row}}{\\rho}"],
+    ]},
+    { h:"Superheater headers", eqs:[
+      ["Header diameter from velocity", "D_{req}=\\sqrt{\\dfrac{4V'_{s}}{\\pi V_{sel}}}"],
+      ["Design pressure rule", "P_d=\\begin{cases}3.5\\,\\text{barg} & P<1.5\\\\ P+2 & 1.5\\!\\le\\!P\\!\\le\\!20\\\\ 1.1P & 20<P\\!\\le\\!80\\end{cases}"],
+      ["Thickness by pressure", "t_1=\\dfrac{PD}{2(68.947SE+PY)}+A"],
+      ["PG-52.4 diagonal efficiency", "Eff_{diag}=\\dfrac{S_L-d_{th}}{S_L}"],
+      ["Thickness by ligament", "t_2=\\dfrac{PD}{2(S\\,Eff_{diag}+YP)}+C.A."],
+      ["Header steam pressure drop", "\\Delta P_h=3.36\\!\\times\\!10^{-6}\\,fr\\,L\\,\\dfrac{W^2}{\\rho(D-t)^5}"],
+      ["Tube-bundle pressure drop", "\\Delta P_{tb}=3.36\\!\\times\\!10^{-6}\\,fr\\,L_e\\,\\dfrac{W^2}{\\rho(D-t)^5}"],
+      ["Total SH steam drop", "\\Delta P_{SH}=\\Delta P_{h,i}+\\Delta P_{h,o}+\\Delta P_{tb}"],
+    ]},
+  ]},
+
+  { n:6, t:"Drums, Bank Tubes & Headers", tc:"Chapters 24–37", short:"Drums & Bank", sections:[
+    { h:"Drum sizing", eqs:[
+      ["Thickness by pressure", "t_{\\min,1}=\\dfrac{PD}{2(68.947SE+PY)}+C.A."],
+      ["Required longitudinal efficiency", "E_{L,req}=\\dfrac{PR}{St}+(1-Y)\\dfrac{P}{S}"],
+      ["Actual long. efficiency", "E_{L,act}=\\dfrac{S_L-d_{th}}{S_L}"],
+      ["Actual circ. efficiency", "E_{c,act}=\\dfrac{S_T-d_{th}}{S_T}"],
+      ["Thickness by ligament", "t_{\\min,2}=\\dfrac{PD}{2[SE-(1-Y)P]}+C.A."],
+      ["Ellipsoidal head", "D_0=D_i+2t,\\;CR=0.9D_i,\\;KR=0.17D_i,\\;DH=0.25D_i"],
+    ]},
+    { h:"Bank geometry", eqs:[
+      ["Height between drum centres", "H_{cc}=H_F+\\tfrac{D_{sd}}{2}-h_{sd}+\\tfrac{D_{md}}{2}-h_{md}"],
+      ["Average tube length", "L_{avg}=H_{cc}-\\tfrac{D_{sd}+D_{md}}{2}+\\tfrac{h_{sd}+h_{md}}{2}"],
+      ["Bank heat duty", "Q_{bk}=(h_{sv}-h_{fw})\\,\\dot m_{dw}"],
+      ["Bank heat surface", "A_{bk}=\\pi\\tfrac{D_t}{12}\\,N_{row}(N_{deep}-1)L_t"],
+      ["Bank tube thickness", "t_{\\min}=\\dfrac{PD}{2S+P}+0.005D+e"],
+      ["Total bank tubes", "N_{bk}=\\mathrm{Roundup}\\!\\left(\\dfrac{V_{cir}}{V_{sel}A_{tube}60}\\right)"],
+    ]},
+    { h:"Bank heat transfer & draft", eqs:[
+      ["Gas mass velocity", "G_{bk}=12\\dfrac{W'}{N_{deep}\\,L_t(S_T-d)}"],
+      ["Convective coefficient", "h_C=0.9\\,\\dfrac{G^{0.6}}{D_t^{0.4}}\\,\\dfrac{K^{0.67}C_p^{0.33}}{\\mu^{0.27}}"],
+      ["NTU effectiveness (flue gas)", "\\epsilon_{fg}=\\dfrac{1-e^{-NTU(1-C)}}{1-C e^{-NTU(1-C)}}"],
+      ["NTU effectiveness (sat. water)", "\\epsilon_{sw}=1-e^{C\\,NTU^{0.22}(e^{-C\\,NTU^{0.78}}-1)}"],
+      ["Bank draft pressure drop", "\\Delta P_{bk}=9.3\\!\\times\\!10^{-10}\\,G^2 fr\\,\\dfrac{N_{deep}}{\\rho}"],
+      ["Bank water pressure drop", "\\Delta P_{bw}=3.36\\!\\times\\!10^{-6}\\,fr\\,L_e\\,\\dfrac{(W'/N_{row})^2}{\\rho(D-t)^5}"],
+    ]},
+    { h:"Duct drops", eqs:[
+      ["Equivalent duct diameter", "D_{eq}=1.3\\dfrac{(WH)^{0.625}}{(W+H)^{0.25}}"],
+      ["Duct Reynolds", "Re=15.2\\dfrac{W'}{\\mu D_{eq}}"],
+      ["Duct friction factor", "fr=\\dfrac{0.316}{Re^{0.25}}"],
+      ["Boiler exit duct drop", "\\Delta P_{air}=9.3\\!\\times\\!10^{-5}\\,fW^2\\dfrac{L_e}{\\rho d^5}"],
+    ]},
+    { h:"Headers & connections", eqs:[
+      ["Front/rear wall header D", "A_{req}=\\dfrac{V'_{front}}{V_{sel}},\\;\\; D_{req}=\\sqrt{\\dfrac{4A_{req}}{\\pi}}"],
+      ["Front/rear header thickness", "t_m=\\dfrac{PD}{2(68.947SE+PY)}+A"],
+      ["Drum→SH pipe diameter", "D_{req}=\\sqrt{\\dfrac{4V'_s}{\\pi V_{sel}}}"],
+      ["Drum→SH pipe thickness", "t_{\\min}=\\dfrac{PD}{2(68.947SE+PY)}+A"],
+      ["Drum→SH pipe length", "L_{pipe}=L_{straight}+N_{elbow}L_{elbow}"],
+      ["Drum→SH pipe drop", "\\Delta P_g=3.36\\!\\times\\!10^{-6}fr\\,L\\,\\dfrac{W^2}{\\rho(D-t)^5}"],
+    ]},
+  ]},
+
+  { n:7, t:"Economizer", tc:"Chapters 38–50", short:"Economizer", sections:[
+    { h:"Duty & sizing", eqs:[
+      ["Heat duty", "Q_{ec}=(h_{w,o}-h_{w,i})\\,\\dot m_{fw}(1+\\text{blowdown})"],
+      ["BFW pump outlet", "P_{pump}=P_{PSV_2}+\\Delta P_{chev}+\\Delta P_{pipe}+\\Delta P_{ec}"],
+      ["Design pressure", "P_{d}=1.1\\,P_{op}"],
+      ["Tube thickness", "t_{\\min}=\\dfrac{PD}{2S+P}+0.005D+e"],
+      ["Obstruction area", "A_{obs}=\\dfrac{d}{12}+\\dfrac{n_{fin}b\\,H_{fin}}{6}"],
+      ["Gas mass velocity", "G=\\dfrac{W_{fg}}{(S_T/12-A_{obs})N_{deep}L_{fin}}"],
+    ]},
+    { h:"ESCOA convection coefficient", eqs:[
+      ["General form", "h_c=C_3C_1C_5\\!\\left(\\tfrac{d+2h}{d}\\right)^{0.5}\\!\\left(\\tfrac{t_{fg}+460}{t_w+460}\\right)^{0.25}GC_p\\!\\left(\\tfrac{K}{\\mu C_p}\\right)^{0.67}"],
+      ["Fin gap", "S=1/n_{fin}-b_{fin}"],
+      ["C$_1$", "C_1=0.25\\,Re^{-0.35}"],
+      ["C$_2$", "C_2=0.07+8\\,Re^{-0.45}"],
+      ["Solid in-line C$_3,C_4,C_5,C_6$", "\\begin{aligned}C_3&=0.2+0.65e^{-0.25h/S}\\\\C_4&=0.08(0.15S_T/d)^{-1.1(h/S)^{0.15}}\\\\C_5&=1.1-(0.75-1.5e^{-0.7N d})e^{-2S_L/S_T}\\\\C_6&=1.6-(0.75-1.5e^{-0.7N d})e^{-2(S_L/S_T)^2}\\end{aligned}"],
+      ["Solid staggered", "\\begin{aligned}C_3&=0.35+0.65e^{-0.25h/S}\\\\C_4&=0.11(0.15S_T/d)^{-0.7(h/S)^{0.2}}\\\\C_5&=0.7+(0.7-0.8e^{-0.15Nd^2})e^{-S_L/S_T}\\\\C_6&=1.1+(1.8-2.1e^{-0.15Nd^2})e^{-2(S_L/S_T)^2}\\\\&\\quad -(0.7-0.8e^{-0.15Nd^2})e^{-0.6S_L/S_T}\\end{aligned}"],
+      ["Serrated in-line", "\\begin{aligned}C_3&=0.35+0.5e^{-0.35(h/S)}\\\\C_4&=0.08(0.15S_T/d)^{-1.1(h/S)^{0.2}}\\\\C_5&=1.1-(0.75-1.5e^{-0.7Nd})e^{-2S_L/S_T}\\\\C_6&=1.6-(0.75-1.5e^{-0.7Nd})e^{-2(S_L/S_T)^2}\\end{aligned}"],
+      ["Serrated staggered", "\\begin{aligned}C_3&=0.55+0.45e^{-0.35(h/S)}\\\\C_4&=0.11(0.05S_T/d)^{-0.7(h/S)^{0.23}}\\\\C_5&=0.7+(0.7-0.8e^{-0.15Nd^2})e^{-S_L/S_T}\\\\C_6&=1.1+(1.8-2.1e^{-0.15Nd^2})e^{-2(S_L/S_T)^2}\\\\&\\quad -(0.7-0.8e^{-0.15Nd^2})e^{-0.6S_L/S_T}\\end{aligned}"],
+    ]},
+    { h:"Fin efficiency & overall U", eqs:[
+      ["Solid-fin efficiency", "E=\\dfrac{1}{1+0.002292\\,m^2h^2\\sqrt{\\tfrac{d+2h}{d}}},\\;m=\\sqrt{\\tfrac{24h_o}{Kb}}"],
+      ["Solid-fin areas", "A_f=\\pi m\\dfrac{4dh+4h^2+2bd+4bh}{24},\\;A_t=A_f+\\pi\\dfrac{d(1-nb)}{12}"],
+      ["Serrated-fin efficiency", "E=\\dfrac{\\tanh(mh)}{mh},\\;m=\\sqrt{\\dfrac{24h_o(b+ws)}{Kb\\,ws}}"],
+      ["Serrated-fin areas", "A_f=\\pi dn\\dfrac{2h(ws+b)+bws}{12ws},\\;A_t=A_f+\\pi\\dfrac{d(1-nb)}{12}"],
+      ["Fin effectiveness", "\\eta=1-(1-E)\\dfrac{A_f}{A_t}"],
+      ["Overall U (full)", "\\dfrac{1}{U}=\\dfrac{A_t}{h_iA_i}+f_i\\dfrac{A_t}{A_i}+f_o\\dfrac{A_t}{A_w}\\dfrac{d}{24K_m}\\ln\\dfrac{d}{d_i}+\\dfrac{1}{\\eta h_o}"],
+      ["Overall U (simplified)", "U=\\eta\\,h_o"],
+    ]},
+    { h:"Heat surface & performance", eqs:[
+      ["LMTD", "\\Delta T_{\\log}=\\dfrac{(T_{h,i}-T_{c,o})-(T_{h,o}-T_{c,i})}{\\ln\\frac{T_{h,i}-T_{c,o}}{T_{h,o}-T_{c,i}}}"],
+      ["Heat surface", "A_{ec}=\\dfrac{Q_{ec}}{h_c\\Delta T_{\\log}}"],
+      ["Tube row number", "N_{row}=\\mathrm{Roundup}\\!\\left(\\dfrac{A_{ec}}{A_t L_{fin}N_{deep}}\\right)"],
+      ["Final heat surface", "A_{ec}^{final}=N_{deep}A_t L_{fin}N_{row}"],
+      ["NTU effectiveness", "\\epsilon=\\dfrac{1-e^{-NTU(1-C)}}{1-C e^{-NTU(1-C)}}"],
+      ["Outlet water temperature", "T_{w,o}=T_{w,i}+\\dfrac{Q}{C_p\\dot m_w}"],
+      ["Outlet gas temperature", "T_{g,o}=T_{g,i}-\\dfrac{Q}{C_p\\dot m_g}"],
+    ]},
+    { h:"Pressure drops", eqs:[
+      ["Header drop", "\\Delta P_{h}=3.36\\!\\times\\!10^{-6}fr\\,L_e\\,\\dfrac{W^2}{\\rho(D-t)^5}"],
+      ["Tube bundle drop", "\\Delta P_{tb}=3.36\\!\\times\\!10^{-6}fr\\,L_e\\,\\dfrac{W^2}{\\rho(D-t)^5}"],
+      ["Package water drop", "\\Delta P_{ec}=2\\Delta P_{h}+\\Delta P_{tb}"],
+      ["Gas-side draft drop (Grimson)", "\\Delta P_{fg}=(f+a)\\dfrac{G^2N_{deep}}{\\rho\\cdot 1.083\\!\\times\\!10^9}"],
+      ["Grimson $a$", "a=\\dfrac{1+B^2}{4N_{deep}}\\dfrac{t_{g2}-t_{g1}}{460+t_g},\\;B=\\left(\\dfrac{A_{gs}-A_{obs}}{A_{gs}}\\right)^2"],
+    ]},
+  ]},
+
+  { n:8, t:"Circulation Ratio", tc:"Chapter 51", short:"Circulation", sections:[
+    { h:"Basic definitions", eqs:[
+      ["CR definition", "CR=1/x,\\qquad\\dot m_{evap}=CR\\cdot\\dot m_{steam}"],
+      ["Furnace heat absorption", "Q_F=W_f LHV-W_g h_{avg}"],
+      ["Drum-leaving steam enthalpy", "h_{dls}=\\tfrac{1}{CR}h_{sv}+(1-\\tfrac{1}{CR})h_{sl}"],
+      ["Downcomer mass flow", "\\dot m_{dc}=CR\\cdot\\dot m_{fw}=CR\\,\\dot m_s(1+\\%_{blowdown})"],
+      ["Downcomer enthalpy balance", "h_{fw}+CR\\,h_{dls}=h_{sv}+CR\\,h_{dc,mix}"],
+      ["Downcomer specific volume", "v_{dc}=\\tfrac{1}{CR}v_{sv}+(1-\\tfrac{1}{CR})v_{sl}"],
+    ]},
+    { h:"Heights & available head", eqs:[
+      ["Top of water wall to bottom", "H_{ww}=H_F+\\tfrac{D_{md}}{2}-h_{md}"],
+      ["Steam drum to bottom", "H_{sd\\to b}=H_{cc}+L_{e,45}+L_{e,135}+L_{in}+L_{out}+D_{md}+D_{sd}-H_{sd,min}"],
+      ["Available head", "\\Delta P_{av}=\\dfrac{H_{sd\\to b}}{v_{dc}\\cdot 144}"],
+      ["Boiling height", "H_{boil}=\\dfrac{CR\\,\\dot m_s\\,H_{ww}(h_{sl}-h_{dc,mix})}{Q_F}"],
+    ]},
+    { h:"Losses & CR test", eqs:[
+      ["Gravity loss in boiling height", "\\Delta P_g=6.95\\!\\times\\!10^{-3}H_{boil}\\dfrac{r_4}{v_f}"],
+      ["Downcomer single-phase friction", "\\Delta P_{dc}=\\dfrac{12fL_{ww}V_{boil}^2}{2g\\,v_{boil}(D-2t)}"],
+      ["Water-wall two-phase friction", "\\Delta P_{ww}=4\\!\\times\\!10^{-10}v_f G_{ww}^2 r_3\\dfrac{fH_{boil}}{D-2t}"],
+      ["Acceleration loss", "\\Delta P_{acc}=1.664\\!\\times\\!10^{-11}v_f G_{ww}^2 r_2"],
+      ["Riser gravity loss", "\\Delta P_{riser}=6.944\\!\\times\\!10^{-3}H_{boil}\\dfrac{r_4}{v_f}"],
+      ["Total losses", "\\Delta P_{tot}=\\Delta P_g+\\Delta P_{dc}+\\Delta P_{ww}+\\Delta P_{acc}+\\Delta P_{riser}"],
+      ["CR test", "\\Delta P_{av}\\cong\\Delta P_{tot}"],
+    ]},
+  ]},
+
+  { n:9, t:"Stack, Draft & PSV", tc:"Chapters 52–58", short:"Stack & PSV", sections:[
+    { h:"Stack sizing & draft", eqs:[
+      ["Stack diameter", "D_{st}=\\sqrt{\\dfrac{4V'_{fg}}{\\pi V_{sel}}},\\quad H/ID\\le 18"],
+      ["Active height", "H_{act}=H_{st}-\\dfrac{\\tfrac{D_{md}}{2}+L_{bk}}{12}+1-\\dfrac{W_{exit}}{2\\cdot 12}"],
+      ["Stack available draft", "\\Delta P_{st}=(\\rho_{air}-\\rho_{fg})H_{act}\\dfrac{12}{64}"],
+      ["Stack pressure drop", "\\Delta P_{stack}=9.3\\!\\times\\!10^{-5}fW^2\\dfrac{L_{st}}{\\rho d_{st}^5}"],
+      ["Net available draft", "\\Delta P_{net}=\\Delta P_{st}-\\Delta P_{stack}"],
+    ]},
+    { h:"Stack heat transfer & outlet", eqs:[
+      ["Convective coefficient", "h_c=2.44\\dfrac{W^{0.8}}{D_{st}^{1.8}}\\!\\left(\\tfrac{C_p}{\\mu}\\right)^{0.4}k^{0.6}"],
+      ["Stack outlet temperature", "T_o=T_i-\\dfrac{Q_{wall}}{C_pW_{fg}}"],
+      ["Barometric pressure", "P_{baro}=\\dfrac{101325(1-2.25577\\!\\times\\!10^{-5}H_{MASL})^{5.25588}}{6894.76}"],
+      ["Water dew-point pressure", "P_{dp}=\\dfrac{m_{H_2O}\\,P_{baro}}{m_{dry fg}}"],
+      ["Insulation thickness", "L_{ins}=k_{ins}\\dfrac{T_{g,i}-T_{st,o}}{12\\,q_{stack,loss}}"],
+    ]},
+    { h:"FD fan & PSV", eqs:[
+      ["Fan brake horsepower", "BHP=\\dfrac{V_a P_{static}}{6356\\cdot 100\\cdot\\eta_{fan}}"],
+      ["Electric motor HP", "HP_{elec}=\\dfrac{BHP}{\\eta_{motor}}"],
+      ["Superheater PSV flow", "\\dot m_{SH,PSV}=0.2\\cdot 1.18\\,\\dot m_s"],
+      ["SH PSV set pressure", "P_{SH,set}=1.03\\cdot 1.05\\,P_{s,o}"],
+      ["Boiler PSV flow", "\\dot m_{B,PSV}=0.4\\,\\dot m_s"],
+      ["Boiler PSV-1 set", "P_{B,set1}=1.03\\cdot 1.05\\,P_{drum}"],
+      ["Boiler PSV-2 set", "P_{B,set2}=1.03\\cdot 1.05(P_{drum}+0.34)"],
+    ]},
+  ]},
+
+  { n:10, t:"Desuperheater & Efficiency", tc:"Chapters 59–60", short:"Desup. & Eff.", sections:[
+    { h:"Desuperheater", eqs:[
+      ["Energy balance", "\\dot m_{bo}\\,h_o+\\dot m_{dw}\\,h_w=\\dot m_{out}\\,h_{out}"],
+      ["Outlet steam flow", "\\dot m_{out}=\\dot m_{bo}+\\dot m_{dw}"],
+    ]},
+    { h:"Input-output efficiency", eqs:[
+      ["Efficiency", "\\eta_{IO}=1-\\dfrac{Q_{\\text{free to atm}}}{Q_{burner}}"],
+      ["Furnace absorption", "Q_{F}=W_f LHV-W_g h_{avg}"],
+    ]},
+    { h:"Heat-loss efficiency", eqs:[
+      ["HHV efficiency", "\\eta_{HHV}=100-(L_1+L_2+L_3+L_4+L_5)"],
+      ["Dry-gas loss L$_1$", "L_1=24\\,w_{dg}\\dfrac{t_g-t_a}{HHV}"],
+      ["Hydrogen/moisture loss L$_2$", "L_2=9(H_2+W)\\dfrac{1080+0.46(t_g-t_a)}{HHV}\\cdot 100"],
+      ["Moisture-in-air loss L$_3$", "L_3=46\\,M\\,w_{da}\\dfrac{t_g-t_a}{HHV}"],
+      ["Radiation loss L$_4$", "L_4=10^{\\,0.62-0.42\\log Q}"],
+      ["Unburned/CO margin L$_5$", "L_5=\\text{unburned}+\\text{CO}+\\text{margin}"],
+      ["HHV↔LHV conversion", "\\eta_{LHV}=\\eta_{HHV}\\dfrac{HHV}{LHV}"],
+    ]},
+  ]},
+
+  { n:11, t:"Weights & Holdup", tc:"Chapters 61–73", short:"Weights & Holdup", sections:[
+    { h:"Tube lengths", eqs:[
+      ["Furnace tangent-tube number", "N_{tt}=\\mathrm{round}\\!\\left(\\dfrac{L_{F,bl}}{D_t}\\right)+1"],
+      ["Furnace membrane-tube number", "N_{mt}=\\mathrm{Round}\\!\\left(\\dfrac{L_F}{S_L}\\right)"],
+      ["Expansion to steam/mud drum", "L_{max}=\\dfrac{D_{drum}}{2}\\sin\\!\\left(\\dfrac{180-\\theta_{drill}}{2}\\right)"],
+      ["Elbow equivalent length (D-type)", "L_{elbow}=16\\dfrac{D-2t}{12}"],
+    ]},
+    { h:"Water weights & holdup", eqs:[
+      ["Drum length", "L_{drum}=L_{rl}+2L_{head}+L_{SH}+L_{bk}+16"],
+      ["Mud-drum water weight", "m_{md,w}=\\tfrac{\\pi}{4}D_{md}^2 L_{drum}\\rho_{sw}"],
+      ["Steam-drum water weight", "m_{sd,w}=\\tfrac12\\tfrac{\\pi}{4}D_{sd}^2 L_{drum}\\rho_{sw}"],
+      ["Boiler package water weight", "m_{bw}=m_{sd,w}+m_{md,w}+m_{tw}"],
+      ["Total tube number", "N_{bt}=N_{bk}+N_F+2N_{deep}"],
+      ["Boiler tube water weight", "m_{tw}=\\bigl[L_{bk,tot}+1.15(L_{F,tt}+L_{F,mt})+2L_{F,wt}+2L_{bk,w}\\bigr]\\tfrac{\\pi}{4}(D_t-t)^2\\rho_{sw}"],
+    ]},
+    { h:"Holdup time", eqs:[
+      ["Max level fluctuation", "H_{fluc}=\\dfrac{Q_{surge}}{3600\\,t_{surge}\\,\\rho_{sl}\\,A_{drum}}"],
+      ["Min required water (drilling)", "H_{min,drill}=\\dfrac{D_{sd}}{2}\\sin\\!\\left(\\dfrac{180-\\theta_{drill}}{2}\\right)"],
+      ["Min steam-drum diameter", "D_{min}=H_{min,drill}+H_{fluc}"],
+      ["Holdup volume change", "\\Delta V=V_{head,hi}+V_{st,hi}-V_{head,lo}-V_{st,lo}"],
+      ["Holdup time", "t_{holdup}=\\dfrac{\\Delta V}{\\dot m_{norm}}"],
+    ]},
+    { h:"Component weights", eqs:[
+      ["Drum shell weight", "m_{shell}=\\pi D_itL_{drum}\\rho(1+\\text{misc.}\\% )"],
+      ["Drum head weight", "m_{head}=2(0.223)\\,t_{\\min}(1.22D_i+SF+t)^2"],
+      ["Tangent-wall weight", "m_{tt}=N_{tt}L_{tt}\\,m_{ft}"],
+      ["Membrane-wall weight", "m_{mt}=N_{mt}L_{mt}\\,m_{ft}"],
+      ["Furnace front/rear wall weight", "m_{fr}=2N_{wt}H_F(1.10)\\tfrac{1}{12}m_{ft}"],
+      ["Front/rear header weight", "m_{hdr}=\\dfrac{2\\pi[D^2-(D-2t)^2]L\\rho}{144\\cdot 12}(1+\\text{misc.}\\% )"],
+      ["Superheater tube weight", "m_{SH,t}=m_{ft}N_{row}N_{deep}L_{SH,tube}"],
+      ["Superheater package weight", "m_{SH}=(m_{SH,t}+m_{h,i}+m_{h,o})(1+\\text{margin}\\% )"],
+      ["Bank package weight", "m_{bk}=N_{bk}\\,m_{ft}\\dfrac{L_{avg}}{12}"],
+      ["Economizer fin plates", "m_{fp}=N_{row}N_{deep}N_{plates}\\rho_{fin}t_{fin}\\dfrac{\\pi[(D+H_{fin})^2-D^2]}{4}"],
+      ["Economizer package weight", "m_{ec}=m_{fp}+m_{tubes}+m_{elbows}+m_{hdr}+m_{casing}"],
+      ["Stack weight", "m_{st}=\\dfrac{\\pi[D^2-(D-2t)^2]H_{act}\\rho}{144\\cdot 4}(1+\\text{misc.}\\% )"],
+    ]},
+  ]},
+
+  { n:12, t:"Reports & Layouts", tc:"Chapter 74", short:"Reports", list:[
+    "Water-tube boiler layout",
+    "Superheater package layout",
+    "Economizer package layout",
+    "Boiler performance sheet",
+    "Stack calculation",
+    "Forced draft fan calculation",
+    "Pressure safety valve calculation",
+    "Boiler feed water calculation",
+    "Desuperheater calculation",
+    "Steam drum water operating levels",
+    "Weight calculation",
+    "Flue gas velocity inside boiler",
+  ]},
+];
+
+/* Palette: navy → indigo → violet → magenta → red → coral → orange → amber */
+const PALETTE_HEX = [
+  '#0d1b4c','#16277a','#2638a6','#4034ad',
+  '#612da5','#8a2a94','#b02b7a','#cc2e62',
+  '#e03a4c','#ed5c37','#f28526','#f7b032'
+];
+const PALETTE_NUM = PALETTE_HEX.map(h => parseInt(h.slice(1), 16));
+
+/* ================================================================
+   STAGE
+================================================================ */
+const container = document.getElementById('container');
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x03050f);
+scene.fog = new THREE.FogExp2(0x03050f, 0.008);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 500);
+camera.position.set(0, 3.5, 26);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.18;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+container.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(innerWidth, innerHeight);
+labelRenderer.domElement.style.position = 'absolute';
+labelRenderer.domElement.style.top = '0';
+labelRenderer.domElement.style.left = '0';
+labelRenderer.domElement.style.pointerEvents = 'none';
+container.appendChild(labelRenderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.enablePan = false;
+controls.minDistance = 18;
+controls.maxDistance = 48;
+controls.minPolarAngle = 0.35;
+controls.maxPolarAngle = Math.PI * 0.75;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.55;
+
+/* ================================================================
+   LIGHTING
+================================================================ */
+scene.add(new THREE.AmbientLight(0x1a2a50, 1.4));
+
+const keyLight = new THREE.DirectionalLight(0xc0d8ff, 1.7);
+keyLight.position.set(12, 18, 12);
+scene.add(keyLight);
+
+const rimLight = new THREE.DirectionalLight(0x4020a0, 1.3);
+rimLight.position.set(-12, -6, -12);
+scene.add(rimLight);
+
+const coreLight = new THREE.PointLight(0xc080ff, 22, 30, 2);
+scene.add(coreLight);
+
+/* ================================================================
+   CENTRAL GRADIENT PILLAR
+================================================================ */
+const PILLAR_H = 17;
+const pillarGeo = new THREE.CylinderGeometry(0.35, 0.35, PILLAR_H, 32, 1, true);
+const pillarMat = new THREE.ShaderMaterial({
+  uniforms:{ uTime:{ value: 0 } },
+  vertexShader:`
+    varying vec2 vUv;
+    void main(){
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader:`
+    uniform float uTime;
+    varying vec2 vUv;
+    void main(){
+      float y = vUv.y;
+      vec3 cB = vec3(0.08, 0.14, 0.42);
+      vec3 cM = vec3(0.55, 0.20, 0.55);
+      vec3 cT = vec3(0.97, 0.69, 0.20);
+      vec3 col = mix(cB, cM, smoothstep(0.0, 0.5, y));
+      col = mix(col, cT, smoothstep(0.5, 1.0, y));
+      float pulse = 0.65 + 0.35*sin(uTime*2.0 - y*12.0);
+      float edge = smoothstep(0.0, 0.05, y)*smoothstep(1.0, 0.95, y);
+      gl_FragColor = vec4(col * pulse * 1.9, 0.55 * pulse * edge);
+    }
+  `,
+  transparent:true,
+  blending:THREE.AdditiveBlending,
+  depthWrite:false,
+  side:THREE.DoubleSide
+});
+const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+scene.add(pillar);
+
+const pillarHaloMat = new THREE.ShaderMaterial({
+  uniforms:{ uTime:{ value: 0 } },
+  vertexShader:`
+    varying vec2 vUv;
+    void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+  `,
+  fragmentShader:`
+    uniform float uTime;
+    varying vec2 vUv;
+    void main(){
+      float y = vUv.y;
+      vec3 cB = vec3(0.10, 0.18, 0.55);
+      vec3 cT = vec3(1.0, 0.75, 0.28);
+      vec3 col = mix(cB, cT, y);
+      float pulse = 0.5 + 0.5*sin(uTime*1.5 - y*8.0);
+      float edge = smoothstep(0.0, 0.15, y)*smoothstep(1.0, 0.85, y);
+      gl_FragColor = vec4(col * pulse, 0.09 * pulse * edge);
+    }
+  `,
+  transparent:true,
+  blending:THREE.AdditiveBlending,
+  depthWrite:false,
+  side:THREE.DoubleSide
+});
+const pillarHalo = new THREE.Mesh(
+  new THREE.CylinderGeometry(1.0, 1.0, PILLAR_H + 0.5, 32, 1, true),
+  pillarHaloMat
+);
+scene.add(pillarHalo);
+
+/* Base & top discs */
+const baseDiscMat = new THREE.MeshBasicMaterial({
+  color: PALETTE_NUM[0], transparent:true, opacity:0.55,
+  blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide
+});
+const baseDisc = new THREE.Mesh(new THREE.RingGeometry(7.5, 8.4, 96), baseDiscMat);
+baseDisc.rotation.x = -Math.PI/2;
+baseDisc.position.y = -PILLAR_H/2;
+scene.add(baseDisc);
+
+const topDiscMat = new THREE.MeshBasicMaterial({
+  color: PALETTE_NUM[11], transparent:true, opacity:0.55,
+  blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide
+});
+const topDisc = new THREE.Mesh(new THREE.RingGeometry(3.0, 3.9, 96), topDiscMat);
+topDisc.rotation.x = -Math.PI/2;
+topDisc.position.y = PILLAR_H/2;
+scene.add(topDisc);
+
+/* Base / top glow */
+const baseGlowMat = new THREE.MeshBasicMaterial({
+  color: PALETTE_NUM[0], transparent:true, opacity:0.35,
+  blending:THREE.AdditiveBlending, depthWrite:false
+});
+const baseGlow = new THREE.Mesh(new THREE.SphereGeometry(0.55, 24, 24), baseGlowMat);
+baseGlow.position.y = -PILLAR_H/2;
+scene.add(baseGlow);
+
+const topGlowMat = new THREE.MeshBasicMaterial({
+  color: PALETTE_NUM[11], transparent:true, opacity:0.55,
+  blending:THREE.AdditiveBlending, depthWrite:false
+});
+const topGlow = new THREE.Mesh(new THREE.SphereGeometry(0.65, 24, 24), topGlowMat);
+topGlow.position.y = PILLAR_H/2;
+scene.add(topGlow);
+
+/* ================================================================
+   BEAM HELPER
+================================================================ */
+const UP = new THREE.Vector3(0,1,0);
+const _dir = new THREE.Vector3();
+
+function makeBeam(p1, p2, rB, rT, mat){
+  _dir.subVectors(p2, p1);
+  const len = _dir.length();
+  const geo = new THREE.CylinderGeometry(rT, rB, len, 6, 1, true);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.copy(p1).addScaledVector(_dir, 0.5);
+  mesh.quaternion.setFromUnitVectors(UP, _dir.clone().normalize());
+  return mesh;
+}
+
+/* ================================================================
+   APP STATE (declared early so builders can use it safely)
+================================================================ */
+let activeIdx = 0;
+let lastSwitch = -10;
+let autoPauseUntil = 0;
+let panelOpen = false;
+let viewShift = 0;
+
+/* ================================================================
+   PANEL DOM + RENDERING
+================================================================ */
+const panel       = document.getElementById('panel');
+const panelBadge  = document.getElementById('panel-badge');
+const panelTitle  = document.getElementById('panel-title');
+const panelSub    = document.getElementById('panel-subtitle');
+const panelBody   = document.getElementById('panel-body');
+const btnClose    = document.getElementById('panel-close');
+const btnPrev     = document.getElementById('prev-group');
+const btnNext     = document.getElementById('next-group');
+const groupNav    = document.getElementById('group-nav');
+
+/* Sidebar */
+GROUPS.forEach((g, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'group-item';
+  btn.dataset.idx = i;
+  btn.style.setProperty('--accent', PALETTE_HEX[i]);
+  btn.innerHTML = `
+    <span class="g-dot" style="background:${PALETTE_HEX[i]}"></span>
+    <span class="g-num">${String(i+1).padStart(2,'0')}</span>
+    <span class="g-name">${g.short}</span>
+  `;
+  btn.addEventListener('click', () => openPanel(i));
+  groupNav.appendChild(btn);
+});
+
+function renderLatex(el){
+  if (window.renderMathInElement) {
+    try {
+      window.renderMathInElement(el, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$',  right: '$',  display: false }
+        ],
+        throwOnError: false
+      });
+    } catch(e) { console.warn('KaTeX render error', e); }
+  } else {
+    setTimeout(() => renderLatex(el), 60);
+  }
+}
+
+function renderGroup(idx){
+  const g = GROUPS[idx];
+  panel.style.setProperty('--accent', PALETTE_HEX[idx]);
+  panelBadge.textContent = String(g.n).padStart(2,'0');
+  panelTitle.textContent = g.t;
+  panelSub.textContent   = g.tc;
+  panelBody.innerHTML = '';
+
+  if (g.list) {
+    const ul = document.createElement('ul');
+    ul.className = 'report-list';
+    g.list.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      ul.appendChild(li);
+    });
+    panelBody.appendChild(ul);
+  } else {
+    g.sections.forEach(section => {
+      const sh = document.createElement('div');
+      sh.className = 'section-header';
+      sh.textContent = section.h;
+      panelBody.appendChild(sh);
+
+      section.eqs.forEach(([name, latex]) => {
+        const item = document.createElement('div');
+        item.className = 'eq-item';
+        item.innerHTML =
+          `<div class="eq-name">${name}</div>` +
+          `<div class="eq-formula">$$${latex}$$</div>`;
+        panelBody.appendChild(item);
+      });
+    });
+    renderLatex(panelBody);
+  }
+  panelBody.scrollTop = 0;
+
+  document.querySelectorAll('.group-item').forEach((el, k) => {
+    el.classList.toggle('active', k === idx && panelOpen);
+  });
+}
+
+function syncLabels(){
+  nodes.forEach((n, i) => n.div.classList.toggle('active', i === activeIdx));
+  document.querySelectorAll('.group-item').forEach((el, k) => {
+    el.classList.toggle('active', k === activeIdx && panelOpen);
+  });
+}
+
+function openPanel(idx){
+  activeIdx = idx;
+  renderGroup(idx);
+  panel.classList.add('open');
+  panelOpen = true;
+  document.body.classList.add('panel-open');
+  autoPauseUntil = performance.now() + 999999;
+  controls.autoRotateSpeed = 0.12;
+  syncLabels();
+}
+
+function closePanel(){
+  panel.classList.remove('open');
+  panelOpen = false;
+  document.body.classList.remove('panel-open');
+  autoPauseUntil = performance.now() + 2500;
+  controls.autoRotateSpeed = 0.55;
+  syncLabels();
+}
+
+btnClose.addEventListener('click', closePanel);
+btnPrev.addEventListener('click', () => openPanel((activeIdx - 1 + GROUPS.length) % GROUPS.length));
+btnNext.addEventListener('click', () => openPanel((activeIdx + 1) % GROUPS.length));
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && panelOpen) closePanel();
+  if (panelOpen && e.key === 'ArrowRight'){ e.preventDefault(); openPanel((activeIdx+1)%GROUPS.length); }
+  if (panelOpen && e.key === 'ArrowLeft' ){ e.preventDefault(); openPanel((activeIdx-1+GROUPS.length)%GROUPS.length); }
+});
+
+/* ================================================================
+   NODE CONSTELLATION (Vertical Spiral)
+================================================================ */
+const N_NODES = GROUPS.length;
+const SPIRAL_TURNS = 1.15;
+const SPIRAL_Y_MIN = -PILLAR_H/2 + 1.2;
+const SPIRAL_Y_MAX =  PILLAR_H/2 - 1.2;
+const R_MIN = 3.0;
+const R_MAX = 7.0;
+
+const nodeGeo = new THREE.SphereGeometry(0.15, 20, 20);
+const nodeHaloGeo = new THREE.SphereGeometry(0.48, 24, 24);
+const nodes = [];
+const nodePositions = [];
+
+for (let i = 0; i < N_NODES; i++) {
+  const t = i / (N_NODES - 1);
+  const y = SPIRAL_Y_MIN + t * (SPIRAL_Y_MAX - SPIRAL_Y_MIN);
+  const radius = R_MAX - (R_MAX - R_MIN) * t;
+  const angle = t * Math.PI * 2 * SPIRAL_TURNS - Math.PI/2;
+  const x = Math.cos(angle) * radius;
+  const z = Math.sin(angle) * radius;
+  const pos = new THREE.Vector3(x, y, z);
+  nodePositions.push(pos);
+
+  const colorNum = PALETTE_NUM[i];
+  const colorHex = PALETTE_HEX[i];
+  const colorObj = new THREE.Color(colorNum);
+
+  const anchorMat = new THREE.MeshBasicMaterial({
+    color: colorObj.clone().lerp(new THREE.Color(0xffffff), 0.4),
+    transparent: true, opacity: 0.95,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  const anchor = new THREE.Mesh(nodeGeo, anchorMat);
+  anchor.position.copy(pos);
+  scene.add(anchor);
+
+  const haloMat = new THREE.MeshBasicMaterial({
+    color: colorObj, transparent: true, opacity: 0.18,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  const halo = new THREE.Mesh(nodeHaloGeo, haloMat);
+  halo.position.copy(pos);
+  scene.add(halo);
+
+  const beamTarget = new THREE.Vector3(0, y, 0);
+  const beamMat = new THREE.MeshBasicMaterial({
+    color: colorObj, transparent: true, opacity: 0.22,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  const beam = makeBeam(beamTarget, pos, 0.055, 0.012, beamMat);
+  scene.add(beam);
+
+  const outer = document.createElement('div');
+  outer.className = 'part-label';
+  outer.style.setProperty('--accent', colorHex);
+  const inner = document.createElement('div');
+  inner.className = 'label-inner';
+  inner.innerHTML = `<span class="num">${String(i+1).padStart(2,'0')}</span><span class="txt">${GROUPS[i].short}</span>`;
+  outer.appendChild(inner);
+
+  const cssObj = new CSS2DObject(outer);
+  const outward = pos.clone().setY(0).normalize().multiplyScalar(0.9);
+  cssObj.position.copy(pos).add(outward);
+  scene.add(cssObj);
+
+  outer.addEventListener('mouseenter', () => {
+    if (panelOpen) return;
+    if (activeIdx === i) return;
+    activeIdx = i;
+    autoPauseUntil = performance.now() + 2500;
+    syncLabels();
+  });
+  outer.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openPanel(i);
+  });
+
+  nodes.push({
+    anchor, halo, beamMat, div: outer, obj: cssObj,
+    baseColor: colorObj.clone(), baseBeamOp: 0.22
+  });
+}
+
+/* Subtle constellation arcs between adjacent nodes */
+for (let i = 0; i < N_NODES - 1; i++) {
+  const p1 = nodePositions[i];
+  const p2 = nodePositions[i+1];
+  const mid = p1.clone().lerp(p2, 0.5);
+  const radial = mid.clone().setY(0);
+  if (radial.lengthSq() > 1e-6) {
+    radial.normalize().multiplyScalar(0.6);
+    mid.add(radial);
+  }
+  const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
+  const pts = curve.getPoints(24);
+  const g = new THREE.BufferGeometry().setFromPoints(pts);
+  const l = new THREE.Line(g, new THREE.LineBasicMaterial({
+    color: 0x5060a0, transparent: true, opacity: 0.22,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  }));
+  scene.add(l);
+}
+
+/* ================================================================
+   PARTICLES
+================================================================ */
+function makeGlowTexture(){
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(32,32,0,32,32,32);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.4, 'rgba(200,180,255,0.65)');
+  g.addColorStop(1, 'rgba(120,80,220,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,64,64);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+const PCOUNT = 700;
+const pPos = new Float32Array(PCOUNT * 3);
+const pRad = new Float32Array(PCOUNT);
+const pAng = new Float32Array(PCOUNT);
+const pY   = new Float32Array(PCOUNT);
+
+for (let i = 0; i < PCOUNT; i++) {
+  pRad[i] = 0.5 + Math.random() * 9.0;
+  pAng[i] = Math.random() * Math.PI * 2;
+  pY[i]   = -PILLAR_H/2 - 1 + Math.random() * (PILLAR_H + 3);
+  pPos[i*3+0] = Math.cos(pAng[i]) * pRad[i];
+  pPos[i*3+1] = pY[i];
+  pPos[i*3+2] = Math.sin(pAng[i]) * pRad[i];
+}
+
+const pGeo = new THREE.BufferGeometry();
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+
+const pMat = new THREE.PointsMaterial({
+  size: 0.09, map: makeGlowTexture(),
+  color: 0xa080ff, transparent: true, opacity: 0.75,
+  depthWrite: false, blending: THREE.AdditiveBlending,
+  sizeAttenuation: true
+});
+scene.add(new THREE.Points(pGeo, pMat));
+
+/* ================================================================
+   POST-PROCESSING
+================================================================ */
+const composer = new EffectComposer(renderer);
+composer.setPixelRatio(Math.min(devicePixelRatio, 2));
+composer.setSize(innerWidth, innerHeight);
+composer.addPass(new RenderPass(scene, camera));
+
+const bloom = new UnrealBloomPass(
+  new THREE.Vector2(innerWidth, innerHeight),
+  1.05, 0.7, 0.14
+);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+/* ================================================================
+   ANIMATION LOOP
+================================================================ */
+const clock = new THREE.Clock();
+const _wp = new THREE.Vector3();
+const WHITE = new THREE.Color(0xffffff);
+
+function animate(){
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t  = clock.elapsedTime;
+  const now = performance.now();
+
+  /* Auto cycle (only when panel closed) */
+  if (!panelOpen && now > autoPauseUntil && t - lastSwitch > 3.5) {
+    lastSwitch = t;
+    activeIdx = (activeIdx + 1) % N_NODES;
+    syncLabels();
+  }
+
+  /* ---- Soft camera shift so the panel never overlaps the 3D stage ---- */
+  const w = innerWidth, h = innerHeight;
+  const targetShift = (panelOpen && w > 980)
+    ? Math.min(600, w * 0.94) * 0.5
+    : 0;
+  viewShift += (targetShift - viewShift) * 0.11;
+  if (Math.abs(targetShift - viewShift) < 0.4) viewShift = targetShift;
+
+  if (viewShift > 0.4) {
+    camera.setViewOffset(w, h, viewShift, 0, w, h);
+  } else {
+    camera.clearViewOffset();
+  }
+
+  /* Pillar shaders */
+  pillarMat.uniforms.uTime.value = t;
+  pillarHaloMat.uniforms.uTime.value = t;
+
+  /* Base / top pulse */
+  baseGlowMat.opacity = 0.3 + 0.15 * Math.sin(t * 2.4);
+  topGlowMat.opacity  = 0.5 + 0.2  * Math.sin(t * 2.0 + 1.5);
+  baseDiscMat.opacity = 0.45 + 0.15 * Math.sin(t * 1.8);
+  topDiscMat.opacity  = 0.5  + 0.15 * Math.sin(t * 1.6 + 0.8);
+
+  /* Core light */
+  coreLight.position.y = Math.sin(t * 0.4) * 5;
+  coreLight.intensity  = 20 + Math.sin(t * 3.0) * 6;
+
+  /* Nodes */
+  nodes.forEach((n, i) => {
+    const isActive = (i === activeIdx);
+    const wantOp = isActive ? 0.95 : n.baseBeamOp;
+    n.beamMat.opacity += (wantOp - n.beamMat.opacity) * 0.1;
+
+    const wantColor = isActive
+      ? n.baseColor.clone().lerp(WHITE, 0.35)
+      : n.baseColor;
+    n.beamMat.color.lerp(wantColor, 0.1);
+
+    const s = 1 + (isActive ? 0.8 : 0) + Math.sin(t*4 + i) * 0.08;
+    n.anchor.scale.setScalar(s);
+
+    const hs = 1 + (isActive ? 1.3 : 0) + Math.sin(t*3 + i) * 0.1;
+    n.halo.scale.setScalar(hs);
+
+    const targetHaloOp = isActive ? 0.55 : 0.16;
+    n.halo.material.opacity += (targetHaloOp - n.halo.material.opacity) * 0.1;
+  });
+
+  /* Particles */
+  const arr = pGeo.attributes.position.array;
+  for (let i = 0; i < PCOUNT; i++) {
+    pAng[i] += dt * (0.12 + pRad[i] * 0.02);
+    pY[i]   += dt * 0.35;
+    if (pY[i] > PILLAR_H/2 + 1.5) {
+      pY[i] = -PILLAR_H/2 - 1.5;
+      pRad[i] = 0.5 + Math.random() * 9.0;
+    }
+    arr[i*3+0] = Math.cos(pAng[i]) * pRad[i];
+    arr[i*3+1] = pY[i];
+    arr[i*3+2] = Math.sin(pAng[i]) * pRad[i];
+  }
+  pGeo.attributes.position.needsUpdate = true;
+
+  /* Colorize particles by height (indigo → amber) */
+  const pAttrs = pGeo.attributes;
+  if (!pAttrs.color) {
+    const colors = new Float32Array(PCOUNT * 3);
+    for (let i = 0; i < PCOUNT; i++) {
+      const tt = (pY[i] + PILLAR_H/2) / PILLAR_H;
+      colors[i*3+0] = 0.3 + 0.65 * Math.max(0, tt - 0.3);
+      colors[i*3+1] = 0.2 + 0.55 * Math.max(0, tt - 0.2);
+      colors[i*3+2] = 0.9 - 0.6 * tt;
+    }
+    pGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    pMat.vertexColors = true;
+    pMat.color = new THREE.Color(0xffffff);
+    pMat.needsUpdate = true;
+  } else {
+    const colors = pAttrs.color.array;
+    for (let i = 0; i < PCOUNT; i++) {
+      const tt = (pY[i] + PILLAR_H/2) / PILLAR_H;
+      colors[i*3+0] = 0.3 + 0.65 * Math.max(0, tt - 0.3);
+      colors[i*3+1] = 0.2 + 0.55 * Math.max(0, tt - 0.2);
+      colors[i*3+2] = 0.9 - 0.6 * tt;
+    }
+    pAttrs.color.needsUpdate = true;
+  }
+
+  /* Label depth fade */
+  const camPos = camera.position;
+  nodes.forEach(n => {
+    n.obj.getWorldPosition(_wp);
+    const dist = camPos.distanceTo(_wp);
+    const fade = THREE.MathUtils.clamp(1.0 - (dist - 14) * 0.025, 0.25, 1.0);
+    n.div.style.opacity = fade;
+    n.div.style.zIndex = String(Math.floor(10000 - dist * 100));
+  });
+
+  controls.update();
+  composer.render();
+  labelRenderer.render(scene, camera);
+}
+
+renderer.setAnimationLoop(animate);
+
+/* ================================================================
+   RESIZE
+================================================================ */
+window.addEventListener('resize', () => {
+  const w = innerWidth, h = innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(w, h);
+
+  labelRenderer.setSize(w, h);
+
+  composer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  composer.setSize(w, h);
+  bloom.setSize(w, h);
+});
+</script>
+</body>
+</html>
