@@ -25,7 +25,7 @@ Three.js r160 · KaTeX 0.16 · CSS2DRenderer · UnrealBloom · custom GLSL shade
 
 ---
 
-## 📚 Primary source & attribution
+##  Primary source & attribution
 
 The equation set, chapter organization, and engineering methodology implemented
 in this visualization are adapted from the following textbook:
